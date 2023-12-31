@@ -1,0 +1,37 @@
+:root {
+  --height-header : 40px;
+  --height-footer : 60px;
+}
+
+html {
+  touch-action: none; 
+}
+
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--height-header);
+  border-bottom: 1px solid #111;
+  background: #999;
+}
+main {
+  padding-top: var(--height-header);
+  width: 100%;
+  height: calc(100vh - var(--height-footer));
+  background: #fff;
+}
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: var(--height-footer);
+  border-top: 1px solid #111;
+  background: #999;
+}
+
+a {
+  text-decoration: underline;
+}
