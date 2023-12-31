@@ -11,7 +11,9 @@ class drawingCanvas {
     this.PEN_OPACITY = '33';
     this.PEN_OPACITY_SCALE = 3;
     this.lastPoint = null; 
-
+    
+    this.lastEventTime = 0;
+    this.eventThrottle = 10;
 
     this.penData = {
       finger: false,
@@ -49,10 +51,11 @@ class drawingCanvas {
     }
   }
   pointerMove = (event) => {
-    if(this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
+    if (this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)) {
       const pathData = this.getDrawnPathData(event);
-      if(this.lastPoint){
-        this.drawLine(this.lastPoint, pathData);
+      if (this.lastPoint) {
+        const midPoint = this.midPointBtw(this.lastPoint, pathData);
+        this.drawSmoothLine(this.lastPoint, midPoint, pathData);
       }
       this.lastPoint = pathData;
     }
@@ -96,13 +99,20 @@ class drawingCanvas {
     context.lineJoin = data.lineJoin;
   }
 
-  drawLine(from, to){
+  drawSmoothLine(from, mid, to){
     this.setContextStyle(this.penContext, to);
     this.penContext.beginPath();
     this.penContext.moveTo(from.x, from.y);
-    this.penContext.lineTo(to.x, to.y);
+    this.penContext.quadraticCurveTo(mid.x, mid.y, to.x, to.y);
     this.penContext.stroke();
   }
+  midPointBtw(p1, p2) {
+    return {
+      x: (p1.x + p2.x) / 2,
+      y: (p1.y + p2.y) / 2
+    };
+  }
+
 }
 
 
