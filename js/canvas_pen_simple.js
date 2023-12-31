@@ -10,6 +10,7 @@ class drawingCanvas {
     this.isDrawing = false;
     this.PEN_OPACITY = '33';
     this.PEN_OPACITY_SCALE = 3;
+    this.lastPoint = null; 
 
 
     this.penData = {
@@ -41,25 +42,24 @@ class drawingCanvas {
   pointerDown = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       this.isDrawing = true;
-      this.drawnPaths.push([this.getDrawnPathData(event)]);
+      const pathData = this.getDrawnPathData(event);
+      this.drawnPaths.push([pathData]);
+      this.lastPoint = pathData; // 마지막 점 초기화
 
     }
   }
   pointerMove = (event) => {
     if(this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
       const pathData = this.getDrawnPathData(event);
-      const currentPath = this.drawnPaths[this.drawnPaths.length - 1];
-      currentPath.push(pathData);
-      this.drawPath(currentPath);
+      if(this.lastPoint){
+        this.drawLine(this.lastPoint, pathData);
+      }
+      this.lastPoint = pathData;
     }
   }
   pointerUp = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       this.isDrawing = false;
-      const currentPath = this.drawnPaths[this.drawnPaths.length - 1];
-      if(currentPath){
-        this.drawPath(currentPath);
-      }
       return 
     }
   }
@@ -96,18 +96,11 @@ class drawingCanvas {
     context.lineJoin = data.lineJoin;
   }
 
-
-  drawPath(path){
-    if(path.length < 2) return; // 경로에 점이 하나밖에 없으면 선을 그릴 수 없습니다.
-  
+  drawLine(from, to){
+    this.setContextStyle(this.penContext, to);
     this.penContext.beginPath();
-    this.penContext.moveTo(path[0].x, path[0].y);
-  
-    for(let i = 1; i < path.length; i++){
-      this.setContextStyle(this.penContext, path[i]);
-      this.penContext.lineTo(path[i].x, path[i].y);
-    }
-  
+    this.penContext.moveTo(from.x, from.y);
+    this.penContext.lineTo(to.x, to.y);
     this.penContext.stroke();
   }
 }
