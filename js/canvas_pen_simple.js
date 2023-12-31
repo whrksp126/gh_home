@@ -19,7 +19,7 @@ class drawingCanvas {
     this.penData = {
       finger: false,
       tool : '1',
-      thickness : '2',
+      thickness : '5',
       color : '#252525'
     };
   }
@@ -73,10 +73,12 @@ class drawingCanvas {
     
     const tool = Number(this.penData.tool);
     const color = tool == 2 ? this.penData.color + this.PEN_OPACITY : this.penData.color;
+    const pressure = event.pressure ? event.pressure : 1; // 압력 정보가 없는 경우 기본값으로 1 사용
+
     const thickness = Number(this.penData.thickness);
     
     const capAndJoin = tool == 1 ? 'round' : 'butt';
-    const lineWidth = tool == 2 ? thickness * this.PEN_OPACITY_SCALE : thickness;
+    const lineWidth = tool == 2 ? thickness * this.PEN_OPACITY_SCALE : thickness * pressure;
     return {
       x: event.clientX - targetRect.left, 
       y: event.clientY - targetRect.top, 
@@ -91,27 +93,6 @@ class drawingCanvas {
     }
   }
 
-  // 펜 스타일 지정
-  setContextStyle(context, data){
-    context.strokeStyle = data.color;
-    context.lineWidth = data.lineWidth
-    context.lineCap = data.lineCap;
-    context.lineJoin = data.lineJoin;
-  }
-
-  drawSmoothLine(from, mid, to){
-    this.setContextStyle(this.penContext, to);
-    this.penContext.beginPath();
-    this.penContext.moveTo(from.x, from.y);
-    this.penContext.quadraticCurveTo(mid.x, mid.y, to.x, to.y);
-    this.penContext.stroke();
-  }
-  midPointBtw(p1, p2) {
-    return {
-      x: (p1.x + p2.x) / 2,
-      y: (p1.y + p2.y) / 2
-    };
-  }
   addPoint(event) {
     const pathData = this.getDrawnPathData(event);
     this.drawnPaths[this.drawnPaths.length - 1].push(pathData);
@@ -127,22 +108,36 @@ class drawingCanvas {
     this.frameRequest = null;
     const path = this.drawnPaths[this.drawnPaths.length - 1];
     if (path && path.length > 1) {
-      this.penContext.beginPath();
-      this.penContext.moveTo(path[0].x, path[0].y);
-
+      // 각 포인트마다 스타일을 적용
       for (let i = 1; i < path.length - 1; i++) {
+        this.setContextStyle(this.penContext, path[i]);
+        this.penContext.beginPath();
+        this.penContext.moveTo(path[i - 1].x, path[i - 1].y);
+  
         const c = (path[i].x + path[i + 1].x) / 2;
         const d = (path[i].y + path[i + 1].y) / 2;
         this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d);
+        this.penContext.stroke();
       }
-
+  
+      // 마지막 점을 위한 스타일 적용
+      this.setContextStyle(this.penContext, path[path.length - 1]);
+      this.penContext.beginPath();
+      this.penContext.moveTo(path[path.length - 2].x, path[path.length - 2].y);
       this.penContext.quadraticCurveTo(
         path[path.length - 1].x, path[path.length - 1].y,
         path[path.length - 1].x, path[path.length - 1].y
       );
-
       this.penContext.stroke();
     }
+  }
+  
+  // 펜 스타일 지정
+  setContextStyle(context, data){
+    context.strokeStyle = data.color;
+    context.lineWidth = data.lineWidth
+    context.lineCap = data.lineCap;
+    context.lineJoin = data.lineJoin;
   }
 
 }
