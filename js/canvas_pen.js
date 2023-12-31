@@ -53,15 +53,13 @@ class drawingCanvas {
   pointerDown = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       this.isDrawing = true;
-      this.setImageLastPoint(event);
       this.drawnPaths.push([this.getDrawnPathData(event)]);
 
     }
   }
   pointerMove = (event) => {
-    if(event.pointerType == 'pen' || this.penData.finger){
+    if( this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
       const leng = this.drawnPaths.length;
-      this.setImageLastPoint(event);
       this.drawnPaths[leng - 1].push(this.getDrawnPathData(event));
       this.clearPreCanvas(this.drawnPaths[leng - 1]);
       this.drawPreCanvas(this.drawnPaths[leng - 1]);
@@ -72,7 +70,8 @@ class drawingCanvas {
       const leng = this.drawnPaths.length;
       this.clearPreCanvas(this.drawnPaths[leng - 1]);
       this.drawPenCanvas(this.drawnPaths[leng - 1]);
-      return this.isDrawing = false
+      this.isDrawing = false;
+      return 
     }
   }
   wheel(event){
@@ -82,13 +81,6 @@ class drawingCanvas {
 
   }
 
-  // imgLast 데이터 최신화
-  setImageLastPoint(e){
-    const {x, y, scale} = this.state;
-    this.imgLast.x = (e.clientX - x)/scale - this.containerRect.left/scale;
-    this.imgLast.y = (e.clientY - y)/scale - this.containerRect.top/scale;    
-  }
-  
 
   getDrawnPathData(event){
     const targetRect = event.target.getBoundingClientRect()

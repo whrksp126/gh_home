@@ -11,10 +11,16 @@ header {
   position: fixed;
   top: 0;
   left: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   height: var(--height-header);
   border-bottom: 1px solid #111;
   background: #999;
+}
+header h1{
+  color: #fff;
 }
 main {
   padding-top: var(--height-header);
