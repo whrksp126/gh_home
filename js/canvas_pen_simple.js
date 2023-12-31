@@ -11,7 +11,8 @@ class drawingCanvas {
     this.PEN_OPACITY = '33';
     this.PEN_OPACITY_SCALE = 3;
     this.lastPoint = null; 
-    
+    this.frameRequest = null; // 프레임 요청 ID
+
     this.lastEventTime = 0;
     this.eventThrottle = 10;
 
@@ -52,12 +53,11 @@ class drawingCanvas {
   }
   pointerMove = (event) => {
     if (this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)) {
-      const pathData = this.getDrawnPathData(event);
-      if (this.lastPoint) {
-        const midPoint = this.midPointBtw(this.lastPoint, pathData);
-        this.drawSmoothLine(this.lastPoint, midPoint, pathData);
+      const now = Date.now();
+      if (now - this.lastEventTime > this.eventThrottle) {
+        this.lastEventTime = now;
+        this.addPoint(event);
       }
-      this.lastPoint = pathData;
     }
   }
   pointerUp = (event) => {
@@ -111,6 +111,32 @@ class drawingCanvas {
       x: (p1.x + p2.x) / 2,
       y: (p1.y + p2.y) / 2
     };
+  }
+
+  addPoint(event) {
+    const pathData = this.getDrawnPathData(event);
+    if (this.lastPoint) {
+      const midPoint = this.midPointBtw(this.lastPoint, pathData);
+      this.drawnPaths[this.drawnPaths.length - 1].push(midPoint, pathData);
+      this.requestDraw();
+    }
+    this.lastPoint = pathData;
+  }
+
+  requestDraw() {
+    if (!this.frameRequest) {
+      this.frameRequest = requestAnimationFrame(this.draw);
+    }
+  }
+
+  draw = () => {
+    this.frameRequest = null;
+    const currentPath = this.drawnPaths[this.drawnPaths.length - 1];
+    if (currentPath && currentPath.length > 1) {
+      for (let i = 1; i < currentPath.length; i += 2) {
+        this.drawSmoothLine(currentPath[i - 1], currentPath[i], currentPath[i + 1] || currentPath[i]);
+      }
+    }
   }
 
 }
