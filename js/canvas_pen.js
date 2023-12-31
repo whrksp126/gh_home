@@ -45,8 +45,6 @@ class drawingCanvas {
     this.container.addEventListener('pointerdown', this.pointerDown);
     this.container.addEventListener('pointermove', this.pointerMove);
     this.container.addEventListener('pointerup', this.pointerUp);
-    this.container.addEventListener('wheel',this.wheel);
-    window.addEventListener('resize', this.resize);
   }
 
 
@@ -58,29 +56,34 @@ class drawingCanvas {
     }
   }
   pointerMove = (event) => {
-    if( this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
+    if(this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
       const leng = this.drawnPaths.length;
       this.drawnPaths[leng - 1].push(this.getDrawnPathData(event));
-      this.clearPreCanvas(this.drawnPaths[leng - 1]);
-      this.drawPreCanvas(this.drawnPaths[leng - 1]);
+      this.requestDraw(this.drawnPaths[leng - 1]);
     }
   }
   pointerUp = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       const leng = this.drawnPaths.length;
-      this.clearPreCanvas(this.drawnPaths[leng - 1]);
-      this.drawPenCanvas(this.drawnPaths[leng - 1]);
+      this.requestDraw(this.drawnPaths[leng - 1], true);
       this.isDrawing = false;
-      return 
+      return;
     }
   }
-  wheel(event){
 
+
+  requestDraw(path, final = false) {
+    if (!this.frameRequest) {
+      this.frameRequest = requestAnimationFrame(() => {
+        this.frameRequest = null;
+        this.clearPreCanvas(path);
+        this.drawPreCanvas(path);
+        if (final) {
+          this.drawPenCanvas(path);
+        }
+      });
+    }
   }
-  resize(event){
-
-  }
-
 
   getDrawnPathData(event){
     const targetRect = event.target.getBoundingClientRect()
@@ -149,9 +152,9 @@ class drawingCanvas {
     ctx.stroke();
   }
 
-  // penCanvas에 현재 라인 그리기
   drawPenCanvas(path){
-    this.drawCanvasLine(this.penContext, path)
+    this.drawCanvasLine(this.penContext, path);
+    // 추가적으로, 이미 그린 경로를 지우거나 다른 처리가 필요한 경우 여기에 추가합니다.
   }
 
   // 펜 스타일 지정

@@ -19,7 +19,7 @@ class drawingCanvas {
     this.penData = {
       finger: false,
       tool : '1',
-      thickness : '5',
+      thickness : '4',
       color : '#252525'
     };
   }
