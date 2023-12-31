@@ -112,17 +112,11 @@ class drawingCanvas {
       y: (p1.y + p2.y) / 2
     };
   }
-
   addPoint(event) {
     const pathData = this.getDrawnPathData(event);
-    if (this.lastPoint) {
-      const midPoint = this.midPointBtw(this.lastPoint, pathData);
-      this.drawnPaths[this.drawnPaths.length - 1].push(midPoint, pathData);
-      this.requestDraw();
-    }
-    this.lastPoint = pathData;
+    this.drawnPaths[this.drawnPaths.length - 1].push(pathData);
+    this.requestDraw();
   }
-
   requestDraw() {
     if (!this.frameRequest) {
       this.frameRequest = requestAnimationFrame(this.draw);
@@ -131,11 +125,23 @@ class drawingCanvas {
 
   draw = () => {
     this.frameRequest = null;
-    const currentPath = this.drawnPaths[this.drawnPaths.length - 1];
-    if (currentPath && currentPath.length > 1) {
-      for (let i = 1; i < currentPath.length; i += 2) {
-        this.drawSmoothLine(currentPath[i - 1], currentPath[i], currentPath[i + 1] || currentPath[i]);
+    const path = this.drawnPaths[this.drawnPaths.length - 1];
+    if (path && path.length > 1) {
+      this.penContext.beginPath();
+      this.penContext.moveTo(path[0].x, path[0].y);
+
+      for (let i = 1; i < path.length - 1; i++) {
+        const c = (path[i].x + path[i + 1].x) / 2;
+        const d = (path[i].y + path[i + 1].y) / 2;
+        this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d);
       }
+
+      this.penContext.quadraticCurveTo(
+        path[path.length - 1].x, path[path.length - 1].y,
+        path[path.length - 1].x, path[path.length - 1].y
+      );
+
+      this.penContext.stroke();
     }
   }
 
