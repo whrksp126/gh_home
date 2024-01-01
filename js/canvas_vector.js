@@ -14,12 +14,12 @@ class drawingCanvas {
     this.frameRequest = null; // 프레임 요청 ID
 
     this.lastEventTime = 0;
-    this.eventThrottle = 20;
+    this.eventThrottle = 50;
 
     this.penData = {
       finger: false,
       tool : '1',
-      thickness : '1',
+      thickness : '4',
       color : '#252525'
     };
   }
@@ -73,7 +73,7 @@ class drawingCanvas {
     
     const tool = Number(this.penData.tool);
     const color = tool == 2 ? this.penData.color + this.PEN_OPACITY : this.penData.color;
-    const pressure = event.pressure ? event.pressure : 1; // 압력 정보가 없는 경우 기본값으로 1 사용
+    const pressure = event.pressure ? event.pressure : 1;
 
     const thickness = Number(this.penData.thickness);
     
@@ -103,22 +103,27 @@ class drawingCanvas {
       this.frameRequest = requestAnimationFrame(this.draw);
     }
   }
+
   draw = () => {
     this.frameRequest = null;
     const path = this.drawnPaths[this.drawnPaths.length - 1];
     if (path && path.length > 1) {
-      this.setContextStyle(this.penContext, path[0]);
-      this.penContext.beginPath();
-      this.penContext.moveTo(path[0].x, path[0].y);
-  
+      // 각 포인트마다 스타일을 적용
       for (let i = 1; i < path.length - 1; i++) {
+        this.setContextStyle(this.penContext, path[i]);
+        this.penContext.beginPath();
+        this.penContext.moveTo(path[i - 1].x, path[i - 1].y);
+  
         const c = (path[i].x + path[i + 1].x) / 2;
         const d = (path[i].y + path[i + 1].y) / 2;
         this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d);
-        
+        this.penContext.stroke();
       }
   
-      // 마지막 곡선을 그립니다.
+      // 마지막 점을 위한 스타일 적용
+      this.setContextStyle(this.penContext, path[path.length - 1]);
+      this.penContext.beginPath();
+      this.penContext.moveTo(path[path.length - 2].x, path[path.length - 2].y);
       this.penContext.quadraticCurveTo(
         path[path.length - 1].x, path[path.length - 1].y,
         path[path.length - 1].x, path[path.length - 1].y
@@ -126,8 +131,6 @@ class drawingCanvas {
       this.penContext.stroke();
     }
   }
-  
-  
   
   // 펜 스타일 지정
   setContextStyle(context, data){
@@ -138,33 +141,6 @@ class drawingCanvas {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const __handleCanvas = document.querySelectorAll('.handle_canvas');
 __handleCanvas.forEach((_handleCanvas)=>{
