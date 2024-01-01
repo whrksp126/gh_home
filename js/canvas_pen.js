@@ -4,15 +4,14 @@ class drawingCanvas {
     this.containerRect = this.container.getBoundingClientRect();
     this.imgCanvas = container.querySelector('.img_canvas');
     this.imgContext = this.imgCanvas.getContext('2d');
-    this.penCanvas = container.querySelector('.pen_cavnas');
+    this.penCanvas = container.querySelector('.pen_canvas');
     this.penContext = this.penCanvas.getContext('2d');
-    this.preCanvas = container.querySelector('.pre_cavnas');
+    this.preCanvas = container.querySelector('.pre_canvas');
     this.preContext = this.preCanvas.getContext('2d');
 
-    this.lastPoint = null; 
     this.frameRequest = null;
     this.lastEventTime = 0;
-    this.eventThrottle = 10;
+    this.eventThrottle = 20;
 
     this.drawnPaths = [];
     this.isDrawing = false;
@@ -57,8 +56,6 @@ class drawingCanvas {
       this.isDrawing = true;
       const pathData = this.getDrawnPathData(event);
       this.drawnPaths.push([pathData]);
-      this.lastPoint = pathData; // 마지막 점 초기화
-
     }
   }
   pointerMove = (event) => {
@@ -74,20 +71,7 @@ class drawingCanvas {
     if(event.pointerType == 'pen' || this.penData.finger){
       const leng = this.drawnPaths.length;
       this.clearPreCanvas(this.drawnPaths[leng - 1]);
-      // this.drawPenCanvas(this.drawnPaths[leng - 1]);
-      this.frameRequest = null;
-      const path = this.drawnPaths[this.drawnPaths.length - 1];
-      if (path && path.length > 1) {
-        this.setContextStyle(this.penContext, path[0]);
-        this.penContext.beginPath();
-        this.penContext.moveTo(path[0].x, path[0].y);
-        for (let i = 1; i < path.length - 1; i++) {
-          const c = (path[i].x + path[i + 1].x) / 2;
-          const d = (path[i].y + path[i + 1].y) / 2;
-          this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d); 
-        }
-        this.penContext.stroke();
-      }
+      this.draw(this.penContext);
       this.isDrawing = false;
       return 
     }
@@ -126,23 +110,23 @@ class drawingCanvas {
   }
   requestDraw() {
     if (!this.frameRequest) {
-      this.frameRequest = requestAnimationFrame(this.draw);
+      this.frameRequest = requestAnimationFrame(() => this.draw(this.preContext));
     }
   }
 
-  draw = () => {
+  draw = (ctx) => {
     this.frameRequest = null;
     const path = this.drawnPaths[this.drawnPaths.length - 1];
     if (path && path.length > 1) {
-      this.setContextStyle(this.preContext, path[0]);
-      this.preContext.beginPath();
-      this.preContext.moveTo(path[0].x, path[0].y);
+      this.setContextStyle(ctx, path[0]);
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
       for (let i = 1; i < path.length - 1; i++) {
         const c = (path[i].x + path[i + 1].x) / 2;
         const d = (path[i].y + path[i + 1].y) / 2;
-        this.preContext.quadraticCurveTo(path[i].x, path[i].y, c, d); 
+        ctx.quadraticCurveTo(path[i].x, path[i].y, c, d); 
       }
-      this.preContext.stroke();
+      ctx.stroke();
     }
   }
 
@@ -170,29 +154,6 @@ class drawingCanvas {
       maxF: Math.max(maxF, force)
     }), { minX: x, minY: y, maxX: x, maxY: y, maxF: force });
   };   
-
-  // preCanvas에 현재 영역만 그리기
-  drawPreCanvas(path){
-    this.drawCanvasLine(this.preContext, path);
-  }
-
-  // draw line
-  drawCanvasLine(ctx, path){
-    this.setContextStyle(ctx, path[1]);
-    ctx.beginPath();
-    ctx.moveTo(path[0].x, path[0].y);
-    for (let i = 1; i < path.length - 2; i += 2) {
-      const x1 = (path[i].x + path[i + 1].x) / 2;
-      const y1 = (path[i].y + path[i + 1].y) / 2;
-      ctx.quadraticCurveTo(path[i].x, path[i].y, x1, y1);
-    }
-    ctx.stroke();
-  }
-
-  // penCanvas에 현재 라인 그리기
-  drawPenCanvas(path){
-    this.drawCanvasLine(this.penContext, path)
-  }
 
   // 펜 스타일 지정
   setContextStyle(context, data){
