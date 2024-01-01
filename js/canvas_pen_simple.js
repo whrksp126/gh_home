@@ -14,7 +14,7 @@ class drawingCanvas {
     this.frameRequest = null; // 프레임 요청 ID
 
     this.lastEventTime = 0;
-    this.eventThrottle = 20;
+    this.eventThrottle = 10;
 
     this.penData = {
       finger: false,
@@ -118,11 +118,11 @@ class drawingCanvas {
         
       }
   
-      // 마지막 곡선을 그립니다.
-      this.penContext.quadraticCurveTo(
-        path[path.length - 1].x, path[path.length - 1].y,
-        path[path.length - 1].x, path[path.length - 1].y
-      );
+      // // 마지막 곡선을 그립니다.
+      // this.penContext.quadraticCurveTo(
+      //   path[path.length - 1].x, path[path.length - 1].y,
+      //   path[path.length - 1].x, path[path.length - 1].y
+      // );
       this.penContext.stroke();
     }
   }
