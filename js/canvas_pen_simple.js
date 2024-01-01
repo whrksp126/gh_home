@@ -14,12 +14,12 @@ class drawingCanvas {
     this.frameRequest = null; // 프레임 요청 ID
 
     this.lastEventTime = 0;
-    this.eventThrottle = 10;
+    this.eventThrottle = 100;
 
     this.penData = {
       finger: false,
       tool : '1',
-      thickness : '1',
+      thickness : '2',
       color : '#252525'
     };
   }
@@ -103,32 +103,26 @@ class drawingCanvas {
       this.frameRequest = requestAnimationFrame(this.draw);
     }
   }
+
   draw = () => {
+    console.log('실행함')
     this.frameRequest = null;
     const path = this.drawnPaths[this.drawnPaths.length - 1];
     if (path && path.length > 1) {
       this.setContextStyle(this.penContext, path[0]);
       this.penContext.beginPath();
       this.penContext.moveTo(path[0].x, path[0].y);
-  
       for (let i = 1; i < path.length - 1; i++) {
         const c = (path[i].x + path[i + 1].x) / 2;
         const d = (path[i].y + path[i + 1].y) / 2;
-        this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d);
-        
+        this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d); 
       }
-  
-      // // 마지막 곡선을 그립니다.
-      // this.penContext.quadraticCurveTo(
-      //   path[path.length - 1].x, path[path.length - 1].y,
-      //   path[path.length - 1].x, path[path.length - 1].y
-      // );
       this.penContext.stroke();
     }
   }
-  
-  
-  
+
+
+
   // 펜 스타일 지정
   setContextStyle(context, data){
     context.strokeStyle = data.color;

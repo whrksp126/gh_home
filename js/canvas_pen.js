@@ -9,6 +9,10 @@ class drawingCanvas {
     this.preCanvas = container.querySelector('.pre_cavnas');
     this.preContext = this.preCanvas.getContext('2d');
 
+    this.lastPoint = null; 
+    this.frameRequest = null;
+    this.lastEventTime = 0;
+    this.eventThrottle = 10;
 
     this.drawnPaths = [];
     this.isDrawing = false;
@@ -51,23 +55,39 @@ class drawingCanvas {
   pointerDown = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       this.isDrawing = true;
-      this.drawnPaths.push([this.getDrawnPathData(event)]);
+      const pathData = this.getDrawnPathData(event);
+      this.drawnPaths.push([pathData]);
+      this.lastPoint = pathData; // 마지막 점 초기화
 
     }
   }
   pointerMove = (event) => {
     if( this.isDrawing && (event.pointerType == 'pen' || this.penData.finger)){
-      const leng = this.drawnPaths.length;
-      this.drawnPaths[leng - 1].push(this.getDrawnPathData(event));
-      this.clearPreCanvas(this.drawnPaths[leng - 1]);
-      this.drawPreCanvas(this.drawnPaths[leng - 1]);
+      const now = Date.now();
+      if (now - this.lastEventTime > this.eventThrottle) {
+        this.lastEventTime = now;
+        this.addPoint(event);
+      }
     }
   }
   pointerUp = (event) => {
     if(event.pointerType == 'pen' || this.penData.finger){
       const leng = this.drawnPaths.length;
       this.clearPreCanvas(this.drawnPaths[leng - 1]);
-      this.drawPenCanvas(this.drawnPaths[leng - 1]);
+      // this.drawPenCanvas(this.drawnPaths[leng - 1]);
+      this.frameRequest = null;
+      const path = this.drawnPaths[this.drawnPaths.length - 1];
+      if (path && path.length > 1) {
+        this.setContextStyle(this.penContext, path[0]);
+        this.penContext.beginPath();
+        this.penContext.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length - 1; i++) {
+          const c = (path[i].x + path[i + 1].x) / 2;
+          const d = (path[i].y + path[i + 1].y) / 2;
+          this.penContext.quadraticCurveTo(path[i].x, path[i].y, c, d); 
+        }
+        this.penContext.stroke();
+      }
       this.isDrawing = false;
       return 
     }
@@ -97,12 +117,40 @@ class drawingCanvas {
     }
   }
 
+  addPoint(event) {
+    const pathData = this.getDrawnPathData(event);
+    const leng = this.drawnPaths.length;
+    this.drawnPaths[leng - 1].push(pathData);
+    this.clearPreCanvas(this.drawnPaths[leng - 1]);
+    this.requestDraw();
+  }
+  requestDraw() {
+    if (!this.frameRequest) {
+      this.frameRequest = requestAnimationFrame(this.draw);
+    }
+  }
+
+  draw = () => {
+    this.frameRequest = null;
+    const path = this.drawnPaths[this.drawnPaths.length - 1];
+    if (path && path.length > 1) {
+      this.setContextStyle(this.preContext, path[0]);
+      this.preContext.beginPath();
+      this.preContext.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length - 1; i++) {
+        const c = (path[i].x + path[i + 1].x) / 2;
+        const d = (path[i].y + path[i + 1].y) / 2;
+        this.preContext.quadraticCurveTo(path[i].x, path[i].y, c, d); 
+      }
+      this.preContext.stroke();
+    }
+  }
+
   // preCanvas에 현재 영역만 지우기
   clearPreCanvas(path){
     const defaultLineWidth = path[0].lineWidth;
     const clearBoxData = this.calculateBoundingBox(path);
-    const calcSpace = (clearBoxData.maxF * this.FORCE_SCALE) + defaultLineWidth;
-    
+    const calcSpace = (clearBoxData.maxF) + defaultLineWidth;
     const clearX = clearBoxData.minX - calcSpace;
     const clearY = clearBoxData.minY - calcSpace;
     const clearWidth = clearBoxData.maxX - clearBoxData.minX + (calcSpace*2); 
